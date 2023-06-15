@@ -80,6 +80,21 @@ public class GameBoard {
   }
 
   /**
+   * Returns all rows, columns and diagonals
+   * @return
+   */
+  public List<GameBoardSlice> getSlices() {
+    var temp = new ArrayList<GameBoardSlice>(this.size + this.size + 2);
+    for (int i = 0; i < this.size; i++) {
+      temp.add(this.getRow(i));
+      temp.add(this.getColumn(i));
+    }
+    temp.add(getMainDiagonal());
+    temp.add(getAntiDiagonal());
+    return temp;
+  }
+
+  /**
    * Returns an entire row
    * @param row
    * @return
