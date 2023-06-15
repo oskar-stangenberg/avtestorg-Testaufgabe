@@ -47,20 +47,16 @@ public class GameController {
 
   protected GameStatus determineGameStatus(GameBoard gameBoard) {
     final List<GameBoardSlice> slices = gameBoard.getSlices();
-    int numWinnable = 0;
     for (GameBoardSlice slice : slices) {
       final GameStatus winner = findSliceWinner(slice);
-      if (winner == GameStatus.UNDECIDED) {
-        numWinnable++;
-      } else if (winner != GameStatus.STALEMATE) {
+      if (winner == GameStatus.HUMAN_WON || winner == GameStatus.ROBOT_WON) {
         return winner;
       }
     }
-    if (numWinnable == 0) {
+    if(!gameBoard.spaceIsLeft()) {
       return GameStatus.STALEMATE;
-    } else {
-      return GameStatus.UNDECIDED;
     }
+    return GameStatus.UNDECIDED;
   }
 
   protected GameStatus findSliceWinner(GameBoardSlice slice) {
@@ -194,10 +190,10 @@ public class GameController {
   }
 
   @GetMapping(value = "create", produces = "text/plain")
-  public ResponseEntity<String> create() {
+  public ResponseEntity<String> create(@RequestParam(defaultValue = "3") int boardSize) {
     // Loading the game board
     var uuid = UUID.randomUUID().toString();
-    storedGames.put(uuid, new GameBoard());
+    storedGames.put(uuid, new GameBoard(boardSize));
     return ResponseEntity.ok(uuid);
   }
 }

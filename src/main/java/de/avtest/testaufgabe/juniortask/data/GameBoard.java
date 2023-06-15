@@ -11,14 +11,15 @@ import java.util.stream.IntStream;
 public class GameBoard {
 
   // Board size
-  private final int size = 3;
+  private final int size;
 
   // Board data storage
   private List<GameMark> board;
 
   private GamePlayer lastPlayer;
 
-  public GameBoard() {
+  public GameBoard(int size) {
+    this.size = size;
     this.clear();
   }
 
@@ -89,8 +90,10 @@ public class GameBoard {
       temp.add(this.getRow(i));
       temp.add(this.getColumn(i));
     }
-    temp.add(getMainDiagonal());
-    temp.add(getAntiDiagonal());
+    if(size % 2 == 1) {
+      temp.add(getMainDiagonal());
+      temp.add(getAntiDiagonal());
+    }
     return temp;
   }
 
