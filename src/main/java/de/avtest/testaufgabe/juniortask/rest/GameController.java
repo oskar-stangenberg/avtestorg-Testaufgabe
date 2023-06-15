@@ -5,6 +5,8 @@ import de.avtest.testaufgabe.juniortask.data.GameBoardSlice;
 import de.avtest.testaufgabe.juniortask.data.enums.GameMark;
 import de.avtest.testaufgabe.juniortask.data.enums.GamePlayer;
 import de.avtest.testaufgabe.juniortask.data.enums.GameStatus;
+import de.avtest.testaufgabe.juniortask.data.dbo.GameBoardDBO;
+import de.avtest.testaufgabe.juniortask.repository.GameBoardRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +24,8 @@ public class GameController {
   private final Map<String, GameBoard> storedGames = new LinkedHashMap<>();
   private final Random random = new Random();
   @Autowired private CopyrightController copyrightController;
+
+  @Autowired private GameBoardRepository gameBoardRepository;
 
   /**
    *
@@ -104,7 +108,11 @@ public class GameController {
   @GetMapping(value = "play", produces = "text/plain")
   public ResponseEntity<String> play(@RequestParam String gameId, @RequestParam int x, @RequestParam int y) {
     // Loading the game board
-    var gameBoard = storedGames.get(gameId);
+    var gameBoard = getGameBoard(gameId);
+
+    if(gameBoard == null) {
+      return ResponseEntity.notFound().build();
+    }
 
     // Check if the given position is actually valid; can't have the player draw a cross on the table next to the
     // game board ;)
@@ -133,14 +141,38 @@ public class GameController {
     gameBoard.setSpace(x, y, GameMark.CIRCLE);
 
     // Saving the game board and output it to the player
+    saveGameBoard(gameId, gameBoard);
 
     return this.statusOutput(gameBoard);
+  }
+
+  private GameBoard getGameBoard(String gameId) {
+    synchronized (storedGames) {
+      final GameBoard gameBoard = storedGames.get(gameId);
+      if(gameBoard != null) {
+        return gameBoard;
+      }
+
+      final Optional<GameBoardDBO> boardDBOOptional = gameBoardRepository.findById(gameId);
+      if (boardDBOOptional.isEmpty()) {
+        return null;
+      }
+      final GameBoardDBO boardDBO = boardDBOOptional.get();
+      final GameBoard loadedGameBoard = new GameBoard(boardDBO.boardSize());
+      boardDBO.applyToGameBoard(loadedGameBoard);
+      storedGames.put(gameId, loadedGameBoard);
+      return loadedGameBoard;
+    }
   }
 
   @GetMapping(value = "playBot", produces = "text/plain")
   public ResponseEntity<String> playBot(@RequestParam String gameId) {
     // Loading the game board
-    var gameBoard = storedGames.get(gameId);
+    var gameBoard = getGameBoard(gameId);
+
+    if(gameBoard == null) {
+      return ResponseEntity.notFound().build();
+    }
 
     // ##### TASK 5 - Understand the bot ###########################################################################
     // =============================================================================================================
@@ -177,7 +209,11 @@ public class GameController {
     // get random free space from our list
     var randomFreeSpace = freeSpaces.stream().skip(random.nextInt(freeSpaces.size())).findFirst().orElseGet(() -> freeSpaces.get(0));
 
+    // Update the board
     gameBoard.setSpace(randomFreeSpace.get("x"), randomFreeSpace.get("y"), GameMark.CROSS);
+
+    // Saving the game board and output it to the player
+    saveGameBoard(gameId, gameBoard);
 
     return this.statusOutput(gameBoard);
   }
@@ -185,7 +221,10 @@ public class GameController {
   @GetMapping(value = "display", produces = "text/plain")
   public ResponseEntity<String> display(@RequestParam String gameId) {
     // Loading the game board
-    var gameBoard = storedGames.get(gameId);
+    var gameBoard = getGameBoard(gameId);
+    if(gameBoard == null) {
+      return ResponseEntity.notFound().build();
+    }
     return this.statusOutput(gameBoard);
   }
 
@@ -193,7 +232,15 @@ public class GameController {
   public ResponseEntity<String> create(@RequestParam(defaultValue = "3") int boardSize) {
     // Loading the game board
     var uuid = UUID.randomUUID().toString();
-    storedGames.put(uuid, new GameBoard(boardSize));
+    final GameBoard gameBoard = new GameBoard(boardSize);
+    synchronized (storedGames) {
+      storedGames.put(uuid, gameBoard);
+    }
+    saveGameBoard(uuid, gameBoard);
     return ResponseEntity.ok(uuid);
+  }
+
+  private void saveGameBoard(String uuid, GameBoard gameBoard) {
+    gameBoardRepository.save(GameBoardDBO.fromGameBoard(uuid, gameBoard));
   }
 }

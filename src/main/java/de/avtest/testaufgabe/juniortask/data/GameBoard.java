@@ -23,6 +23,10 @@ public class GameBoard {
     this.clear();
   }
 
+  public void setLastPlayer(GamePlayer lastPlayer) {
+    this.lastPlayer = lastPlayer;
+  }
+
   /**
    * Checks position validity and throws an exception in case of an invalid position
    * @param x X position
@@ -138,7 +142,7 @@ public class GameBoard {
   /**
    * Clears the GameBoard
    */
-  private void clear() {
+  public void clear() {
     // Create a square empty board based on the size
     this.board = new ArrayList<>(size * size);
     IntStream.range(0, size * size).forEach(value -> this.board.add(GameMark.NONE));
