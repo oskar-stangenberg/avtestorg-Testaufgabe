@@ -49,6 +49,11 @@ public class GameController {
     );
   }
 
+  /**
+   * Determines the current game-status
+   * @param gameBoard
+   * @return
+   */
   protected GameStatus determineGameStatus(GameBoard gameBoard) {
     final List<GameBoardSlice> slices = gameBoard.getSlices();
     for (GameBoardSlice slice : slices) {
@@ -63,6 +68,11 @@ public class GameController {
     return GameStatus.UNDECIDED;
   }
 
+  /**
+   * Find the winner of a slice
+   * @param slice
+   * @return
+   */
   protected GameStatus findSliceWinner(GameBoardSlice slice) {
     int numHuman = 0;
     int numRobot = 0;
@@ -96,6 +106,15 @@ public class GameController {
     // ##### TASK 6 - No cheating! #################################################################################
 
     return gameBoard.getLastPlayer() != player;
+  }
+
+  /**
+   * Save the GameBoard to the database
+   * @param gameBoard
+   * @return
+   */
+  protected void saveGameBoard(String uuid, GameBoard gameBoard) {
+    gameBoardRepository.save(GameBoardDBO.fromGameBoard(uuid, gameBoard));
   }
 
   /**
@@ -146,6 +165,11 @@ public class GameController {
     return this.statusOutput(gameBoard);
   }
 
+  /**
+   * Attempts to load the game first from the local storedGames and then from the database
+   * @param gameId
+   * @return
+   */
   private GameBoard getGameBoard(String gameId) {
     synchronized (storedGames) {
       final GameBoard gameBoard = storedGames.get(gameId);
@@ -238,9 +262,5 @@ public class GameController {
     }
     saveGameBoard(uuid, gameBoard);
     return ResponseEntity.ok(uuid);
-  }
-
-  private void saveGameBoard(String uuid, GameBoard gameBoard) {
-    gameBoardRepository.save(GameBoardDBO.fromGameBoard(uuid, gameBoard));
   }
 }
