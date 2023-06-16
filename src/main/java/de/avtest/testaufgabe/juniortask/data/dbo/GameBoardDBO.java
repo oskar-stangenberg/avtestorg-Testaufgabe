@@ -7,8 +7,10 @@ import de.avtest.testaufgabe.juniortask.data.enums.GamePlayer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.annotation.PersistenceConstructor;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.Lob;
 import java.beans.ConstructorProperties;
 import java.util.Objects;
 
@@ -18,6 +20,8 @@ public class GameBoardDBO {
     private String gameId;
     private int boardSize;
     private GamePlayer lastPlayer;
+    @Column
+    @Lob
     private String encodedState;
 
     public GameBoardDBO() {

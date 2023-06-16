@@ -254,6 +254,9 @@ public class GameController {
 
   @GetMapping(value = "create", produces = "text/plain")
   public ResponseEntity<String> create(@RequestParam(defaultValue = "3") int boardSize) {
+    if(boardSize < 3 || boardSize > 100) {
+      return ResponseEntity.badRequest().body("The boardSize must be between 3 and 100");
+    }
     // Loading the game board
     var uuid = UUID.randomUUID().toString();
     final GameBoard gameBoard = new GameBoard(boardSize);
